@@ -1,0 +1,12 @@
+SI "victoria" o derrota" ENTONCES:
+    "Combate"
+
+SINO "descubrimiento" o "sin_hallazgos" ENTONCES:
+    "Exploracion"
+
+SINO "mensaje_enviado" ENTONCES:
+    "Interaccion social"
+
+La condición que mejor funcionó fue el resultado porque define el tipo de acción por su valor.
+A medida que aparezcan nuevas acciones y resultados los condicionales se vuelven desacertados.
+Se mejoraría complicando el código, volviéndolo más flexible a la vez.
