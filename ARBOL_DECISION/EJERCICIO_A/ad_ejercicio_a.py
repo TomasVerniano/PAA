@@ -1,170 +1,88 @@
 import pandas as pd 
 import math
+import funciones as fn
 
-def contarFilas(grupo, columna, valor):
+datos = pd.read_csv("telecom.csv", sep=" ")
 
-    #Variables para contar cantidades
-    a = 0
-    b = 0
+def calcularOriginal(datos):
 
-    #Contar las filas positivas
-    for i in [fila for fila in grupo[columna] == valor]:
-        if i == True:
-            a += 1
-    #Contar las filas negativas
-        else:
-            b += 1
+    proporciones = fn.calcularProporcion(datos, 'Aceptó_oferta', 'Sí')
 
-    return (a, b)
+    entropia = fn.calcularEntropia(proporciones, 'Aceptó_oferta', 'Sí', datos)
+    
+    return entropia
 
-def calcularProporcion(grupo, columna, valor):
+def calcularGananciaEdad(datos, entropia_original):
 
-    a_prop = contarFilas(grupo, columna, valor)[0] / (contarFilas(grupo, columna, valor)[0] + contarFilas(grupo, columna, valor)[1])
+    joven = datos[datos['Edad'] <= 30]
+    adulto = datos[(datos['Edad'] > 30) & (datos['Edad'] <= 50)]
+    mayor = datos[datos['Edad'] > 50]
 
-    b_prop = contarFilas(grupo, columna, valor)[1] / (contarFilas(grupo, columna, valor)[0] + contarFilas(grupo, columna, valor)[1])
+    total = len(datos['ID'])
 
-    return (a_prop, b_prop)
+    proporciones_joven = fn.calcularProporcion(joven, 'Aceptó_oferta', 'Sí')
+    proporciones_adulto = fn.calcularProporcion(adulto, 'Aceptó_oferta', 'Sí')
+    proporciones_mayor = fn.calcularProporcion(mayor, 'Aceptó_oferta', 'Sí')
 
-def calcularEntropia(grupo_prop, clave1, clave2, columna, valor, grupo):
+    entropia_joven = fn.calcularEntropia(proporciones_joven, 'Aceptó_oferta', 'Sí', joven)
+    entropia_adulto = fn.calcularEntropia(proporciones_adulto, 'Aceptó_oferta', 'Sí', adulto)
+    entropia_mayor = fn.calcularEntropia(proporciones_mayor, 'Aceptó_oferta', 'Sí', mayor)
 
-    if (contarFilas(grupo, columna, valor)[0] + contarFilas(grupo, columna, valor)[1]) == 0 or contarFilas(grupo, columna, valor)[0] == 0 or contarFilas(grupo, columna, valor)[1] == 0:
-            return 0.0
+    ganancia = entropia_original - (fn.calcularEntropiaPonderada(entropia_joven, len(joven), total) + \
+                                    fn.calcularEntropiaPonderada(entropia_adulto, len(adulto), total) + \
+                                    fn.calcularEntropiaPonderada(entropia_mayor, len(mayor), total)
+                                    )
 
-    return (- (grupo_prop[clave1] * math.log2(grupo_prop[clave1]) + grupo_prop[clave2] * math.log2(grupo_prop[clave2])))
+    return ganancia
 
-def calcularEntropiaPonderada(grupo_entropia, grupo, total):
+def calcularGananciaLinea(datos, entropia_original):
 
-        return ((len(grupo['ID']) / total) * grupo_entropia)
+    tiene = datos[datos['Tiene_línea_fija'] == 'Sí']
+    no_tiene = datos[datos['Tiene_línea_fija'] == 'No']
 
-def calcularOriginal():
+    total = len(datos['ID'])
 
-    #Cargar los datos
-    datos = pd.read_csv("telecom.csv", sep=" ")
+    proporciones_tiene = fn.calcularProporcion(tiene, 'Aceptó_oferta', 'Sí')
+    proporciones_no_tiene = fn.calcularProporcion(no_tiene, 'Aceptó_oferta', 'Sí')
 
-    #Donde guardamos las proporciones
-    conjunto_original_prop = {
-        "acepto_prop" : 0,
-        "no_acepto_prop" : 0
-    }
+    entropia_tiene = fn.calcularEntropia(proporciones_tiene, 'Aceptó_oferta', 'Sí', tiene)
+    entropia_no_tiene = fn.calcularEntropia(proporciones_no_tiene, 'Aceptó_oferta', 'Sí', no_tiene)
 
-    #Variables para contar cantidades
-    aceptados = 0
-    no_aceptados = 0
+    ganancia = entropia_original - (fn.calcularEntropiaPonderada(entropia_tiene, len(tiene), total) + \
+                                    fn.calcularEntropiaPonderada(entropia_no_tiene, len(no_tiene), total)
+                                    )
 
-    #Contar las filas donde se acepto la oferta
-    for i in [fila for fila in datos['Aceptó_oferta'] == 'Sí']:
-        if i == True:
-            aceptados += 1
-    #Contar las filas donde no se acepto la oferta
-        else:
-            no_aceptados += 1
+    return ganancia
 
-    #Calcular y guardar proporciones 
-    conjunto_original_prop['acepto_prop'] = aceptados / (aceptados + no_aceptados)
-    conjunto_original_prop['no_acepto_prop'] = no_aceptados / (aceptados + no_aceptados)
-
-    #Calcular la entropia
-    entropy = - (conjunto_original_prop['acepto_prop'] * math.log2(conjunto_original_prop['acepto_prop']) + \
-                 conjunto_original_prop['no_acepto_prop'] * math.log2(conjunto_original_prop['no_acepto_prop']))
-
-    return entropy
-
-def calcularGananciaEdad(clave1, clave2, columna, valor):
-
-    #Cargar los datos
-    datos = pd.read_csv("telecom.csv", sep=" ")
-
-    jovenes = datos[datos['Edad'] <= 30]
-    adultos = datos[(datos['Edad'] > 30) & (datos['Edad'] <= 50)]
-    mayores = datos[datos['Edad'] > 50]
-
-    total = len(jovenes['ID']) + len(adultos['ID']) + len(mayores['ID'])
-
-    jovenes_prop = {
-        "acepto_prop" : calcularProporcion(jovenes, columna, valor)[0],
-        "no_acepto_prop" : calcularProporcion(jovenes, columna, valor)[1]
-    }
-
-    adultos_prop = {
-        "acepto_prop" : calcularProporcion(adultos, columna, valor)[0],
-        "no_acepto_prop" : calcularProporcion(adultos, columna, valor)[1]
-    }
-
-    mayores_prop = {
-        "acepto_prop" : calcularProporcion(mayores, columna, valor)[0],
-        "no_acepto_prop" : calcularProporcion(mayores, columna, valor)[1]
-    }
-
-    jovenes_entropia = calcularEntropia(jovenes_prop, clave1, clave2, columna, valor, jovenes)
-    adultos_entropia = calcularEntropia(adultos_prop, clave1, clave2, columna, valor, adultos)
-    mayores_entropia = calcularEntropia(mayores_prop, clave1, clave2, columna, valor, mayores)
-
-    ganancia_edad = calcularOriginal() - (calcularEntropiaPonderada(jovenes_entropia, jovenes, total) + \
-                                          calcularEntropiaPonderada(adultos_entropia, adultos, total) + \
-                                          calcularEntropiaPonderada(mayores_entropia, mayores, total) )
-
-    return (ganancia_edad)
-
-def calcularGananciaLinea(clave1, clave2, columna, valor1, valor2):
-
-    #Cargar los datos
-    datos = pd.read_csv("telecom.csv", sep=" ")
-
-    tiene = datos[datos[columna] == valor1]
-    no_tiene = datos[datos[columna] == valor2]
-
-    total = len(tiene['ID']) + len(no_tiene['ID'])
-
-    linea_prop = {
-        "tiene_prop" : calcularProporcion(tiene, columna, valor1)[0],
-        "no_tiene_prop" : calcularProporcion(tiene, columna, valor1)[1]
-    }
-
-    tiene_entropia = calcularEntropia(linea_prop, clave1, clave2, columna, valor1, tiene)
-    no_tiene_entropia = calcularEntropia(linea_prop, clave1, clave2, columna, valor1, no_tiene)
-
-    ganancia_linea = calcularOriginal() - (calcularEntropiaPonderada(tiene_entropia, tiene, total) + \
-                                         calcularEntropiaPonderada(no_tiene_entropia, no_tiene, total))
-
-    return (ganancia_linea)
-
-def calcularGananciaDatos(clave1, clave2, columna, valor):
-
-    datos = pd.read_csv("telecom.csv", sep=" ")
+def calcularGananciaDatos(datos, entropia_original):
 
     bajo = datos[datos['Uso_de_datos'] <= 3.0]
     medio = datos[(datos['Uso_de_datos'] > 3.0) & (datos['Uso_de_datos'] <= 6.0)]
     alto = datos[datos['Uso_de_datos'] > 6.0]
 
-    total = len(bajo['ID']) + len(medio['ID']) + len(alto['ID'])
+    total = len(datos['ID'])
 
-    bajo_prop = {
-        "acepto_prop" : calcularProporcion(bajo, columna, valor)[0],
-        "no_acepto_prop" : calcularProporcion(bajo, columna, valor)[1]
-    }
+    proporciones_bajo = fn.calcularProporcion(bajo, 'Aceptó_oferta', 'Sí')
+    proporciones_medio = fn.calcularProporcion(medio, 'Aceptó_oferta', 'Sí')
+    proporciones_alto = fn.calcularProporcion(alto, 'Aceptó_oferta', 'Sí')
 
-    medio_prop = {
-        "acepto_prop" : calcularProporcion(medio, columna, valor)[0],
-        "no_acepto_prop" : calcularProporcion(medio, columna, valor)[1]
-    }
+    entropia_bajo = fn.calcularEntropia(proporciones_bajo, 'Aceptó_oferta', 'Sí', bajo)
+    entropia_medio = fn.calcularEntropia(proporciones_medio, 'Aceptó_oferta', 'Sí', medio)
+    entropia_alto = fn.calcularEntropia(proporciones_alto, 'Aceptó_oferta', 'Sí', alto)
 
-    alto_prop = {
-        "acepto_prop" : calcularProporcion(alto, columna, valor)[0],
-        "no_acepto_prop" : calcularProporcion(alto, columna, valor)[1]         
-    }
+    ganancia = entropia_original - (fn.calcularEntropiaPonderada(entropia_bajo, len(bajo), total) + \
+                                    fn.calcularEntropiaPonderada(entropia_medio, len(medio), total) + \
+                                    fn.calcularEntropiaPonderada(entropia_alto, len(alto), total)
+                                    )
 
-    bajo_entropia = calcularEntropia(bajo_prop, clave1, clave2, columna, valor, bajo)
-    medio_entropia = calcularEntropia(medio_prop, clave1, clave2, columna, valor, medio)
-    alto_entropia = calcularEntropia(alto_prop, clave1, clave2, columna, valor, alto)
+    return ganancia
 
-    ganancia_datos = calcularOriginal() - (calcularEntropiaPonderada(bajo_entropia, bajo, total) + \
-                                           calcularEntropiaPonderada(medio_entropia, medio, total) + \
-                                           calcularEntropiaPonderada(alto_entropia, alto, total))
+entropia_original = calcularOriginal(datos)
 
-    return (ganancia_datos)
+print("Entropia del conjunto original: \n", entropia_original)
 
-print("Punto A. 2. a: Ganancia por edad \n", calcularGananciaEdad('acepto_prop', 'no_acepto_prop', 'Aceptó_oferta', 'Sí'))
+print("Punto A. 2. a: Ganancia por edad \n", calcularGananciaEdad(datos, entropia_original))
 
-print("Punto A. 2. b: Ganancia por Telefono de Linea \n", calcularGananciaLinea('tiene_prop', 'no_tiene_prop', 'Tiene_línea_fija', 'Sí', 'No'))
+print("Punto A. 2. b: Ganancia por Telefono de Linea \n", calcularGananciaLinea(datos, entropia_original))
 
-print("Punto A. 2. c: Ganancia por Uso de Datos \n", calcularGananciaDatos('acepto_prop', 'no_acepto_prop', 'Uso_de_datos', 'Sí'))
+print("Punto A. 2. c: Ganancia por Uso de Datos \n", calcularGananciaDatos(datos, entropia_original))
