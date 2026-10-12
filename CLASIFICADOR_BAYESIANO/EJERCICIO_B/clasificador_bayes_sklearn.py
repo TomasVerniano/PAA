@@ -12,8 +12,6 @@ for lista in datos_predict:
     for item in lista:
         datos_predict_y.append(item)
 
-print(datos_predict_y)
-
 # Paso 1: Separar caracteristicas y etiquetas
 x_y = fnsk.separarCaracteristicasEtiquetas(datos)
 
