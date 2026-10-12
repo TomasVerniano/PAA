@@ -30,4 +30,5 @@ Probabilidades calculadas para el/los dato/s nuevo/s:
 
 El/los nuevo/s dato/s se clasifica/n como: {probabilidades[1]}
 
-Ganador/es: {probabilidades[2]}""")
+Ganador/es: {probabilidades[2]}
+""")
