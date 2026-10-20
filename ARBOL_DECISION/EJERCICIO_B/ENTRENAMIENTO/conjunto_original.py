@@ -1,20 +1,31 @@
 import pandas as pd
 import funciones as fn
 
-datos = pd.read_csv('ENTRENAMIENTO/TablaPrediccionAbandono-Entrenamiento.csv')
+datos = pd.read_csv('TablaPrediccionAbandono-Entrenamiento.csv')
 
-proporciones = fn.calcularProporcion(datos, 'EstadoFinal', 'Continúa')
+#Grupos
+continua = datos[datos['EstadoFinal'] == 'Continúa']
+abandona = datos[datos['EstadoFinal'] == 'Abandonó']
 
-entropia = fn.calcularEntropia(proporciones, 'EstadoFinal', 'Continúa', datos)
+#Proporciones
+prop_continua = fn.calcularProporcion(datos, continua)
+prop_abandona = fn.calcularProporcion(datos, abandona)
+
+#Entropia
+entropia_conjunto_original = fn.calcularEntropia(prop_continua, prop_abandona)
 
 def main():
-    print(f'''Proporciones:
+    print(f'''
+    Cantidad de alumnos: {len(datos)} 
 
-    Continuan: {proporciones[0]}
-    Abandonos: {proporciones[1]}
+    De los cuales:
+        Continuan: {len(continua)}, Abandonan: {len(abandona)}.
 
-    Entropia del conjunto: {entropia}
+    La proporcion de cada grupo:
+        Continuan: {prop_continua}, Abandonan: {prop_abandona}.
+
+    Entropía del conjunto: {entropia_conjunto_original}
     ''')
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
